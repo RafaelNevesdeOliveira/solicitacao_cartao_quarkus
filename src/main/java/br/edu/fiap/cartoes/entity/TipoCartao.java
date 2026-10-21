@@ -34,6 +34,13 @@ public class TipoCartao {
         this.disponivel = disponivel;
     }
 
+    public TipoCartao(Long id, String nome, String descricao, boolean disponivel) {
+        this.id = id;
+        this.nome = nome;
+        this.descricao = descricao;
+        this.disponivel = disponivel;
+    }
+
     /** Alterar a oferta do tipo sem apagar pedidos anteriores. */
     public void alterarDisponibilidade(boolean disponivel) {
         this.setDisponivel(disponivel);
