@@ -1,0 +1,117 @@
+package br.edu.fiap.cartoes.application.usecase;
+
+import br.edu.fiap.cartoes.presentation.dto.CartaoResponse;
+import br.edu.fiap.cartoes.presentation.dto.SolicitacaoRequest;
+import br.edu.fiap.cartoes.presentation.dto.SolicitacaoResponse;
+import br.edu.fiap.cartoes.domain.model.SolicitacaoCartao;
+import br.edu.fiap.cartoes.domain.model.StatusSolicitacao;
+import br.edu.fiap.cartoes.domain.model.TipoCartao;
+import br.edu.fiap.cartoes.domain.model.Usuario;
+import br.edu.fiap.cartoes.domain.exception.RegraNegocioException; // ⚠️ nome da exceção 409
+import br.edu.fiap.cartoes.domain.exception.EtapaNaoImplementadaException;
+import br.edu.fiap.cartoes.domain.exception.RecursoNaoEncontradoException;
+import br.edu.fiap.cartoes.application.port.SolicitacaoCartaoRepository;
+import br.edu.fiap.cartoes.application.port.TipoCartaoRepository;
+import br.edu.fiap.cartoes.application.port.UsuarioRepository;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+
+import java.util.List;
+
+@ApplicationScoped
+public class SolicitacaoUseCase {
+
+    private final SolicitacaoCartaoRepository solicitacaoRepository;
+    private final TipoCartaoRepository tipoCartaoRepository;
+    private final UsuarioRepository usuarioRepository;
+
+    @Inject
+    public SolicitacaoUseCase(SolicitacaoCartaoRepository solicitacaoRepository,
+                              TipoCartaoRepository tipoCartaoRepository,
+                              UsuarioRepository usuarioRepository) {
+        this.solicitacaoRepository = solicitacaoRepository;
+        this.tipoCartaoRepository = tipoCartaoRepository;
+        this.usuarioRepository = usuarioRepository;
+    }
+
+    /** Buscar titular e tipo por JPA; tipo indisponível ou pedido pendente duplicado gera 409. */
+    @Transactional
+    public SolicitacaoResponse criar(Long usuarioId, SolicitacaoRequest request) {
+        Usuario usuario = usuarioRepository.buscarPorId(usuarioId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
+
+        TipoCartao tipo = tipoCartaoRepository.buscarPorId(request.tipoCartaoId())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Tipo de cartão não encontrado"));
+
+        if (!tipo.isDisponivel()) { // ⚠️ pode ser getDisponivel()
+            throw new RegraNegocioException("Tipo de cartão indisponível");
+        }
+
+        boolean jaTemPendente = solicitacaoRepository
+                .listarPorUsuarioEStatus(usuarioId, StatusSolicitacao.PENDENTE)
+                .stream()
+                .anyMatch(s -> s.getTipoCartao().getId().equals(tipo.getId()));
+
+        if (jaTemPendente) {
+            throw new RegraNegocioException("Já existe uma solicitação pendente para este tipo");
+        }
+
+        SolicitacaoCartao nova = new SolicitacaoCartao(usuario, tipo); // ⚠️ conferir construtor
+        solicitacaoRepository.salvar(nova);
+
+        return paraResponse(nova);
+    }
+
+    /** JPQL própria com filtro de titular e status opcional, nunca listar todos os usuários. */
+    @Transactional
+    public List<SolicitacaoResponse> listar(Long usuarioId, StatusSolicitacao status) {
+        List<SolicitacaoCartao> solicitacoes = (status == null)
+                ? solicitacaoRepository.listarPorUsuario(usuarioId)
+                : solicitacaoRepository.listarPorUsuarioEStatus(usuarioId, status);
+
+        return solicitacoes.stream()
+                .map(this::paraResponse)
+                .toList();
+    }
+
+    /** Buscar por id E titular; retornar 404 para pedido de outro usuário. */
+    @Transactional
+    public SolicitacaoResponse buscar(Long usuarioId, Long id) {
+        return paraResponse(buscarDoTitular(usuarioId, id));
+    }
+
+    /** Em transação, buscar o próprio pedido e chamar cancelar; estado diferente de PENDENTE gera 409. */
+    @Transactional
+    public SolicitacaoResponse cancelar(Long usuarioId, Long id) {
+        SolicitacaoCartao solicitacao = buscarDoTitular(usuarioId, id); // ⚠️ trocar pela busca com bloqueio
+        solicitacao.cancelar(); // a entidade lança o 409 se não estiver PENDENTE
+        solicitacaoRepository.salvar(solicitacao);
+        return paraResponse(solicitacao);
+    }
+
+    /** Item 9 — responsabilidade de outro colega. */
+    public CartaoResponse emitir(Long usuarioId, Long id) {
+        throw new EtapaNaoImplementadaException("SolicitacaoUseCase.emitir");
+    }
+
+    // ---------- auxiliares ----------
+
+    /** Pedido inexistente ou de outro usuário: 404 nos dois casos. */
+    private SolicitacaoCartao buscarDoTitular(Long usuarioId, Long id) {
+        return solicitacaoRepository.buscarPorId(id)
+                .filter(s -> s.getUsuario().getId().equals(usuarioId))
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Solicitação não encontrada"));
+    }
+
+    private SolicitacaoResponse paraResponse(SolicitacaoCartao s) {
+        return new SolicitacaoResponse( // ⚠️ conferir ordem dos campos do record
+                s.getId(),
+                s.getUsuario().getId(),
+                s.getTipoCartao().getId(),
+                s.getTipoCartao().getNome(),
+                s.getSolicitadaEm(),
+                s.getStatus()
+        );
+    }
+}
