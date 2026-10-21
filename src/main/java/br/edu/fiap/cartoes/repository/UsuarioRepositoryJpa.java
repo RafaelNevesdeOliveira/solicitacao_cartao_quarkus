@@ -1,3 +1,4 @@
+
 package br.edu.fiap.cartoes.repository;
 import br.edu.fiap.cartoes.entity.Usuario;
 import br.edu.fiap.cartoes.exception.EmailJaCadastradoException;
@@ -10,33 +11,48 @@ import java.sql.SQLException;
 import java.util.Optional;
 
 /**
- * Adaptador JPA: injete EntityManager, escreva JPQL parametrizada e retorne entidades.
- * Não chamar controller nem gerar token nesta camada. Gravações participam da transação aberta pelo use case.
+ * Implementacao JPA do contrato UsuarioRepository.
+ *
+ * Responsavel por salvar e consultar usuarios.
+ *
+ * Utiliza EntityManager e consultas JPQL
+ * com parametros para acessar o banco de dados.
+ *
+ * As transacoes de gravacao sao controladas
+ * pelos casos de uso.
  */
 @ApplicationScoped
 public class UsuarioRepositoryJpa implements UsuarioRepository {
-    private static final String BUSCA_POR_EMAIL = """
-        SELECT usuario FROM Usuario usuario
-        WHERE lower(usuario.email) = lower(:email)
-    """;
-
-    private final EntityManager entityManager;
 
     @Inject
-    public UsuarioRepositoryJpa(EntityManager entityManager){
-        this.entityManager = entityManager;
+    EntityManager entityManager;
+
+    /**
+     * Salva um novo usuario ou atualiza um existente.
+     */
+    @Override
+    public Usuario salvar(Usuario usuario) {
+
+        if (usuario.getId() == null) {
+            entityManager.persist(usuario);
+            return usuario;
+        }
+
+        return entityManager.merge(usuario);
     }
 
+    /**
+     * Busca um usuario pelo e-mail.
+     *
+     * Retorna Optional.empty() caso nao exista.
+     */
     @Override
-    @Transactional
-    public boolean existePorEmail(String email){
-        return buscaPorEmail(email).isPresent();
-    }
+    public Optional<Usuario> buscarPorEmail(String email) {
 
-    @Override
-    @Transactional
-    public Optional<Usuario> buscaPorEmail(String email){
-        return entityManager.createQuery(BUSCA_POR_EMAIL, Usuario.class)
+        return entityManager.createQuery(
+                        "SELECT u FROM Usuario u WHERE u.email = :email",
+                        Usuario.class
+                )
                 .setParameter("email", email)
                 .getResultStream()
                 .findFirst();

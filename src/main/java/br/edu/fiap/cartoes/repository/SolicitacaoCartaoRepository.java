@@ -1,10 +1,59 @@
 package br.edu.fiap.cartoes.repository;
+
+import br.edu.fiap.cartoes.entity.SolicitacaoCartao;
+import br.edu.fiap.cartoes.entity.StatusSolicitacao;
+
+import java.util.List;
+import java.util.Optional;
+
 /**
- * Interface de persistência a completar pelo grupo. Não há Spring Data: declarar o
- * nome de um método não cria sua implementação. Escrevam os contratos usados pelos
- * use cases e implementem a classe concreta. Ao migrar, movam o contrato para uma
- * porta da aplicação, sem tipos de EntityManager, ResultSet ou DTO HTTP.
+ * Contrato de persistencia das solicitacoes de cartao.
+ *
+ * Define as operacoes utilizadas pelos casos de uso
+ * para salvar e consultar solicitacoes.
+ *
+ * A implementacao sera realizada pela classe
+ * SolicitacaoCartaoRepositoryJpa.
+ *
+ * Nao depende de EntityManager,
+ * Connection ou ResultSet.
  */
 public interface SolicitacaoCartaoRepository {
-    // TODO: definir assinaturas de consulta e gravação indicadas no README.
+
+    /**
+     * Salva uma solicitacao de cartao.
+     *
+     * @param solicitacao solicitacao a persistir
+     * @return solicitacao persistida
+     */
+    SolicitacaoCartao salvar(SolicitacaoCartao solicitacao);
+
+    /**
+     * Busca uma solicitacao pelo ID.
+     *
+     * @param id identificador da solicitacao
+     * @return solicitacao encontrada ou Optional vazio
+     */
+    Optional<SolicitacaoCartao> buscarPorId(Long id);
+
+    /**
+     * Lista as solicitacoes de determinado usuario.
+     *
+     * @param usuarioId identificador do titular
+     * @return lista de solicitacoes do usuario
+     */
+    List<SolicitacaoCartao> listarPorUsuario(Long usuarioId);
+
+    /**
+     * Lista as solicitacoes de determinado usuario
+     * filtradas pelo status.
+     *
+     * @param usuarioId identificador do titular
+     * @param status situacao da solicitacao
+     * @return lista de solicitacoes correspondentes
+     */
+    List<SolicitacaoCartao> listarPorUsuarioEStatus(
+            Long usuarioId,
+            StatusSolicitacao status
+    );
 }

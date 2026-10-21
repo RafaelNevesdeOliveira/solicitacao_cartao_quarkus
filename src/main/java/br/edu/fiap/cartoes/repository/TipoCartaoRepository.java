@@ -1,10 +1,44 @@
+
 package br.edu.fiap.cartoes.repository;
+
+import br.edu.fiap.cartoes.entity.TipoCartao;
+
+import java.util.List;
+import java.util.Optional;
+
 /**
- * Interface de persistência a completar pelo grupo. Não há Spring Data: declarar o
- * nome de um método não cria sua implementação. Escrevam os contratos usados pelos
- * use cases e implementem a classe concreta. Ao migrar, movam o contrato para uma
- * porta da aplicação, sem tipos de EntityManager, ResultSet ou DTO HTTP.
+ * Contrato de persistencia dos tipos de cartao.
+ *
+ * Define as operacoes de consulta e gravacao
+ * que serao implementadas pela classe
+ * TipoCartaoRepositoryJpa.
+ *
+ * Nao depende de EntityManager,
+ * Connection ou ResultSet.
  */
 public interface TipoCartaoRepository {
-    // TODO: definir assinaturas de consulta e gravação indicadas no README.
+
+    /**
+     * Salva um tipo de cartao.
+     *
+     * @param tipoCartao tipo de cartao a persistir
+     * @return tipo de cartao persistido
+     */
+    TipoCartao salvar(TipoCartao tipoCartao);
+
+    /**
+     * Busca um tipo de cartao pelo ID.
+     *
+     * @param id identificador do tipo
+     * @return tipo encontrado ou Optional vazio
+     */
+    Optional<TipoCartao> buscarPorId(Long id);
+
+    /**
+     * Lista todos os tipos de cartao cadastrados,
+     * independentemente da disponibilidade.
+     *
+     * @return lista de tipos de cartao
+     */
+    List<TipoCartao> listarTodos();
 }

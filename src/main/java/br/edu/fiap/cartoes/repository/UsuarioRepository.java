@@ -5,13 +5,39 @@ import br.edu.fiap.cartoes.entity.Usuario;
 import java.util.Optional;
 
 /**
- * Interface de persistência a completar pelo grupo. Não há Spring Data: declarar o
- * nome de um método não cria sua implementação. Escrevam os contratos usados pelos
- * use cases e implementem a classe concreta. Ao migrar, movam o contrato para uma
- * porta da aplicação, sem tipos de EntityManager, ResultSet ou DTO HTTP.
+ * Contrato de persistencia de usuarios.
+ *
+ * Define as operacoes necessarias para acessar
+ * e armazenar usuarios no banco de dados.
+ *
+ * A implementacao sera realizada por
+ * UsuarioRepositoryJpa.
  */
 public interface UsuarioRepository {
-    boolean existePorEmail(String email);
-    Usuario cadastrar(Usuario usuario);
-    Optional<Usuario> buscaPorEmail(String email);
+
+    /**
+     * Salva um usuario no banco de dados.
+     *
+     * @param usuario usuario a ser salvo
+     * @return usuario persistido
+     */
+    Usuario salvar(Usuario usuario);
+
+    /**
+     * Busca um usuario pelo endereco de e-mail.
+     *
+     * @param email e-mail do usuario
+     * @return Optional contendo o usuario,
+     *         caso seja encontrado
+     */
+    Optional<Usuario> buscarPorEmail(String email);
+
+    /**
+     * Busca um usuario pelo identificador.
+     *
+     * @param id identificador do usuario
+     * @return Optional contendo o usuario,
+     *         caso seja encontrado
+     */
+    Optional<Usuario> buscarPorId(Long id);
 }
