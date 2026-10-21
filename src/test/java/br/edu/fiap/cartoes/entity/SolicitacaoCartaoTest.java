@@ -1,5 +1,35 @@
 package br.edu.fiap.cartoes.entity;
-/** Estrutura de teste do grupo; não contém teste resolvido nem @Test de exemplo. */
+
+import br.edu.fiap.cartoes.exception.RegraNegocioException;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 class SolicitacaoCartaoTest {
-    // TODO: declarar os cenários e implementar as verificações descritas no README.
+
+    @Test
+    void deveTransicionarDePendenteParaCancelada() {
+        SolicitacaoCartao solicitacao = novaSolicitacao();
+
+        solicitacao.cancelar();
+
+        assertEquals(StatusSolicitacao.CANCELADA, solicitacao.getStatus());
+    }
+
+    @Test
+    void naoDeveCancelarSolicitacaoQueJaFoiCancelada() {
+        SolicitacaoCartao solicitacao = novaSolicitacao();
+        solicitacao.setStatus(StatusSolicitacao.CANCELADA);
+
+        assertThrows(RegraNegocioException.class, solicitacao::cancelar);
+        assertEquals(StatusSolicitacao.CANCELADA, solicitacao.getStatus());
+    }
+
+    private SolicitacaoCartao novaSolicitacao() {
+        return new SolicitacaoCartao(
+                new Usuario("Cliente", "cliente@example.com", "hash"),
+                new TipoCartao("ESSENCIAL", "Cartão essencial", true)
+        );
+    }
 }
