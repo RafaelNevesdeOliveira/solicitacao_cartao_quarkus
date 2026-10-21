@@ -1,21 +1,25 @@
+
 package br.edu.fiap.cartoes.entity;
 
 import jakarta.persistence.*;
-import java.time.Instant;
-import br.edu.fiap.cartoes.exception.EtapaNaoImplementadaException;
 
 /**
- * Camada entity: representa o estado persistido de TipoCartao e seus comportamentos simples.
- * As anotações JPA já estão prontas. Na migração para Clean, discutam se o modelo
- * de domínio continuará anotado ou se haverá um modelo de persistência separado.
- * Não retornem esta entidade diretamente no controller: usem os DTOs.
+ * Camada entity: representa o estado persistido de TipoCartao
+ * e seus comportamentos simples.
+ *
+ * As anotacoes JPA ja estao prontas.
+ * Na migracao para Clean Architecture, sera discutido
+ * se o dominio continuara anotado ou se havera
+ * um modelo de persistencia separado.
  */
 @Entity
 @Table(name = "tipos_cartao")
 public class TipoCartao {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(nullable = false, unique = true, length = 60)
     private String nome;
 
@@ -26,28 +30,63 @@ public class TipoCartao {
     private boolean disponivel;
 
     /** Construtor sem argumentos exigido pelo JPA. */
-    protected TipoCartao() {}
+    protected TipoCartao() {
+    }
 
-    /** Construtor do cadastro com propriedades e estado inicial preenchidos. */
-    public TipoCartao(String nome, String descricao, boolean disponivel) {
+    /** Construtor utilizado no cadastro. */
+    public TipoCartao(
+            String nome,
+            String descricao,
+            boolean disponivel
+    ) {
         this.nome = nome;
         this.descricao = descricao;
         this.disponivel = disponivel;
     }
 
-    /** Alterar a oferta do tipo sem apagar pedidos anteriores. */
+    /**
+     * Altera a disponibilidade do tipo de cartao.
+     *
+     * false: impede novas solicitacoes.
+     * true: permite novas solicitacoes.
+     *
+     * Solicitacoes anteriores nao sao apagadas.
+     */
     public void alterarDisponibilidade(boolean disponivel) {
-        // TODO: implementar o comportamento descrito no desafio.
-        throw new EtapaNaoImplementadaException("TipoCartao.alterarDisponibilidade");
+        this.disponivel = disponivel;
     }
 
-    // Getters e setters prontos; não usar setters de status para contornar as regras.
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
-    public String getDescricao() { return descricao; }
-    public void setDescricao(String descricao) { this.descricao = descricao; }
-    public boolean isDisponivel() { return disponivel; }
-    public void setDisponivel(boolean disponivel) { this.disponivel = disponivel; }
+    // Getters e setters originais
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
+
+    public boolean isDisponivel() {
+        return disponivel;
+    }
+
+    public void setDisponivel(boolean disponivel) {
+        this.disponivel = disponivel;
+    }
 }
