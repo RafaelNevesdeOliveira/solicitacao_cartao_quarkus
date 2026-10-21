@@ -7,7 +7,7 @@ import br.edu.fiap.cartoes.entity.SolicitacaoCartao;
 import br.edu.fiap.cartoes.entity.StatusSolicitacao;
 import br.edu.fiap.cartoes.entity.TipoCartao;
 import br.edu.fiap.cartoes.entity.Usuario;
-import br.edu.fiap.cartoes.exception.ConflitoException; // ⚠️ nome da exceção 409
+import br.edu.fiap.cartoes.exception.RegraNegocioException; // ⚠️ nome da exceção 409
 import br.edu.fiap.cartoes.exception.EtapaNaoImplementadaException;
 import br.edu.fiap.cartoes.exception.RecursoNaoEncontradoException;
 import br.edu.fiap.cartoes.repository.SolicitacaoCartaoRepository;
@@ -45,7 +45,7 @@ public class SolicitacaoUseCase {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Tipo de cartão não encontrado"));
 
         if (!tipo.isDisponivel()) { // ⚠️ pode ser getDisponivel()
-            throw new ConflitoException("Tipo de cartão indisponível");
+            throw new RegraNegocioException("Tipo de cartão indisponível");
         }
 
         boolean jaTemPendente = solicitacaoRepository
@@ -54,7 +54,7 @@ public class SolicitacaoUseCase {
                 .anyMatch(s -> s.getTipoCartao().getId().equals(tipo.getId()));
 
         if (jaTemPendente) {
-            throw new ConflitoException("Já existe uma solicitação pendente para este tipo");
+            throw new RegraNegocioException("Já existe uma solicitação pendente para este tipo");
         }
 
         SolicitacaoCartao nova = new SolicitacaoCartao(usuario, tipo); // ⚠️ conferir construtor
