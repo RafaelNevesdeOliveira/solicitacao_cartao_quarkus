@@ -6,12 +6,15 @@ import java.util.List;
 import br.edu.fiap.cartoes.dto.*;
 import br.edu.fiap.cartoes.entity.StatusSolicitacao;
 import br.edu.fiap.cartoes.entity.SolicitacaoCartao;
-import br.edu.fiap.cartoes.exception.EtapaNaoImplementadaException;
 import br.edu.fiap.cartoes.exception.RecursoNaoEncontradoException;
 import br.edu.fiap.cartoes.exception.RegraNegocioException;
 import br.edu.fiap.cartoes.repository.SolicitacaoCartaoRepository;
 import br.edu.fiap.cartoes.repository.TipoCartaoRepository;
 import br.edu.fiap.cartoes.repository.UsuarioRepository;
+import br.edu.fiap.cartoes.entity.Cartao;
+import br.edu.fiap.cartoes.repository.CartaoRepository;
+
+
 /**
  * Camada de aplicação a implementar: coordena uma operação, suas regras e transação.
  * O controller já chama estas assinaturas. Na migração para Clean, substituam
@@ -22,6 +25,8 @@ public class SolicitacaoUseCase {
     @Inject SolicitacaoCartaoRepository solicitacoes;
     @Inject UsuarioRepository usuarios;
     @Inject TipoCartaoRepository tiposCartao;
+    @Inject CartaoRepository cartoes;
+
 
     /** Buscar titular e tipo por JPA; tipo indisponível ou pedido pendente duplicado gera 409. */
     @Transactional
@@ -71,9 +76,34 @@ public class SolicitacaoUseCase {
                 solicitacao.getSolicitadaEm(), solicitacao.getStatus());
     }
 
-    /** Em uma transação, bloquear o pedido para escrita, conferir titular/estado, criar cartão e marcar EMITIDA. */
+
+    /**
+     * Emite um cartão para uma solicitação pendente do próprio titular.
+     */
+    @Transactional
     public CartaoResponse emitir(Long usuarioId, Long id) {
-        // TODO: implementar sem colocar SQL ou regras no controller.
-        throw new EtapaNaoImplementadaException("SolicitacaoUseCase.emitir");
+        var solicitacao = solicitacoes.buscarPorIdETitularComBloqueio(id, usuarioId)
+                .orElseThrow(() ->
+                        new RecursoNaoEncontradoException("Solicitacao nao encontrada"));
+
+        if (cartoes.existePorSolicitacao(solicitacao.getId())) {
+            throw new RegraNegocioException(
+                    "Ja existe um cartao para esta solicitacao");
+        }
+
+        solicitacao.marcarEmitida();
+
+        var cartao = new Cartao(solicitacao);
+        cartoes.salvar(cartao);
+
+        return new CartaoResponse(
+                cartao.getId(),
+                solicitacao.getId(),
+                solicitacao.getTipoCartao().getId(),
+                solicitacao.getTipoCartao().getNome(),
+                cartao.getEmitidoEm(),
+                cartao.getStatus()
+        );
     }
+
 }
