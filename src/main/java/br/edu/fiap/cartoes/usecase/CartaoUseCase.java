@@ -1,4 +1,4 @@
-Qpackage br.edu.fiap.cartoes.usecase;
+package br.edu.fiap.cartoes.usecase;
 
 import br.edu.fiap.cartoes.dto.CartaoResponse;
 import br.edu.fiap.cartoes.entity.Cartao;
