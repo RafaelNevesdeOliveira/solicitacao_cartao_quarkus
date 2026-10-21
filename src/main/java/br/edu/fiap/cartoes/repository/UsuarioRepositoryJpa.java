@@ -1,5 +1,5 @@
-
 package br.edu.fiap.cartoes.repository;
+
 import br.edu.fiap.cartoes.entity.Usuario;
 import br.edu.fiap.cartoes.exception.EmailJaCadastradoException;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -13,13 +13,11 @@ import java.util.Optional;
 /**
  * Implementacao JPA do contrato UsuarioRepository.
  *
- * Responsavel por salvar e consultar usuarios.
+ * Responsavel pela persistencia e consulta de usuarios.
  *
- * Utiliza EntityManager e consultas JPQL
- * com parametros para acessar o banco de dados.
- *
- * As transacoes de gravacao sao controladas
- * pelos casos de uso.
+ * Utiliza EntityManager e JPQL para acessar
+ * os dados sem expor detalhes de persistencia
+ * aos casos de uso.
  */
 @ApplicationScoped
 public class UsuarioRepositoryJpa implements UsuarioRepository {
@@ -29,6 +27,9 @@ public class UsuarioRepositoryJpa implements UsuarioRepository {
 
     /**
      * Salva um novo usuario ou atualiza um existente.
+     *
+     * A transacao deve ser coordenada
+     * pelo caso de uso chamador.
      */
     @Override
     public Usuario salvar(Usuario usuario) {
@@ -44,7 +45,7 @@ public class UsuarioRepositoryJpa implements UsuarioRepository {
     /**
      * Busca um usuario pelo e-mail.
      *
-     * Retorna Optional.empty() caso nao exista.
+     * Retorna Optional.empty() quando nao encontrado.
      */
     @Override
     public Optional<Usuario> buscarPorEmail(String email) {
@@ -58,29 +59,69 @@ public class UsuarioRepositoryJpa implements UsuarioRepository {
                 .findFirst();
     }
 
+    /**
+     * Busca um usuario pelo identificador.
+     *
+     * Metodo exigido pelo contrato UsuarioRepository.
+     */
     @Override
+    public Optional<Usuario> buscarPorId(Long id) {
+
+        return Optional.ofNullable(
+                entityManager.find(Usuario.class, id)
+        );
+    }
+
+    /**
+     * Metodo adicional de cadastro implementado
+     * durante a contribuicao de autenticacao.
+     *
+     * Nao faz parte do contrato UsuarioRepository.
+     */
     @Transactional
-    public Usuario cadastrar(Usuario usuario){
-        try{
+    public Usuario cadastrar(Usuario usuario) {
+
+        try {
             entityManager.persist(usuario);
             entityManager.flush();
+
             return usuario;
-        }catch(RuntimeException erro){
-            if(violouChaveUnica(erro)){
-                throw new EmailJaCadastradoException(usuario.getEmail());
+
+        } catch (RuntimeException erro) {
+
+            if (violouChaveUnica(erro)) {
+                throw new EmailJaCadastradoException(
+                        usuario.getEmail()
+                );
             }
-            throw new IllegalStateException("Falhou", erro);
+
+            throw new IllegalStateException(
+                    "Falha ao cadastrar usuario",
+                    erro
+            );
         }
     }
 
-    private boolean violouChaveUnica(Throwable erro){
+    /**
+     * Verifica se a causa de uma falha
+     * corresponde a violacao de chave unica.
+     *
+     * SQLSTATE 23505: unique violation.
+     */
+    private boolean violouChaveUnica(Throwable erro) {
+
         Throwable atual = erro;
-        while(atual != null){
-            if(atual instanceof SQLException sql && "23505".equals(sql.getSQLState())){
+
+        while (atual != null) {
+
+            if (atual instanceof SQLException sql
+                    && "23505".equals(sql.getSQLState())) {
                 return true;
             }
+
             atual = atual.getCause();
         }
+
         return false;
     }
 }
