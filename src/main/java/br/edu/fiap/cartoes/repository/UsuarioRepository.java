@@ -1,7 +1,9 @@
 package br.edu.fiap.cartoes.repository;
 
-import java.util.Optional;
 import br.edu.fiap.cartoes.entity.Usuario;
+
+import java.util.Optional;
+
 /**
  * Interface de persistência a completar pelo grupo. Não há Spring Data: declarar o
  * nome de um método não cria sua implementação. Escrevam os contratos usados pelos
@@ -9,5 +11,11 @@ import br.edu.fiap.cartoes.entity.Usuario;
  * porta da aplicação, sem tipos de EntityManager, ResultSet ou DTO HTTP.
  */
 public interface UsuarioRepository {
-    Optional<Usuario> buscarPorIdComBloqueio(Long id);
+    // TODO: definir assinaturas de consulta e gravação indicadas no README.
+
+    void salvar(Usuario usuario);
+
+    Optional<Usuario> buscarPorEmail(String email);
+
+    Optional<Usuario> buscarPorId(Long id);
 }

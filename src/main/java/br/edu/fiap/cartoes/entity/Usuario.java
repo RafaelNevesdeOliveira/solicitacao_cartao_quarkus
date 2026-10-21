@@ -42,14 +42,18 @@ public class Usuario {
 
     /** Validar o nome antes de alterá-lo. */
     public void alterarNome(String nome) {
-        // TODO: implementar o comportamento descrito no desafio.
-        throw new EtapaNaoImplementadaException("Usuario.alterarNome");
+        if (nome == null || nome.isBlank() || nome.length() > 100) {
+            throw new IllegalArgumentException("Nome inválido: não pode ser vazio e deve ter no máximo 100 caracteres.");
+        }
+        this.nome = nome.trim();
     }
 
     /** Aceitar somente hash produzido pelo componente BCrypt, nunca senha em texto. */
     public void atualizarSenhaHash(String senhaHash) {
-        // TODO: implementar o comportamento descrito no desafio.
-        throw new EtapaNaoImplementadaException("Usuario.atualizarSenhaHash");
+        if (senhaHash == null || senhaHash.isBlank() || !senhaHash.startsWith("$2")) {
+            throw new IllegalArgumentException("A senha deve ser armazenada exclusivamente como hash BCrypt válido.");
+        }
+        this.senhaHash = senhaHash;
     }
 
     // Getters e setters prontos; não usar setters de status para contornar as regras.
