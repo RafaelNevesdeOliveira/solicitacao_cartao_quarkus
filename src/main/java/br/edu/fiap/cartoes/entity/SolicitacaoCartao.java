@@ -1,21 +1,23 @@
+
 package br.edu.fiap.cartoes.entity;
 
+import br.edu.fiap.cartoes.exception.EtapaNaoImplementadaException;
+import br.edu.fiap.cartoes.exception.RegraNegocioException;
 import jakarta.persistence.*;
 import java.time.Instant;
-import br.edu.fiap.cartoes.exception.EtapaNaoImplementadaException;
 
 /**
- * Camada entity: representa o estado persistido de SolicitacaoCartao e seus comportamentos simples.
- * As anotações JPA já estão prontas. Na migração para Clean, discutam se o modelo
- * de domínio continuará anotado ou se haverá um modelo de persistência separado.
- * Não retornem esta entidade diretamente no controller: usem os DTOs.
+ * Representa uma solicitação de cartão bancário.
+ * Contém os dados e as regras de mudança de estado.
  */
 @Entity
 @Table(name = "solicitacoes_cartao")
 public class SolicitacaoCartao {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
@@ -31,10 +33,11 @@ public class SolicitacaoCartao {
     @Column(nullable = false, length = 20)
     private StatusSolicitacao status;
 
-    /** Construtor sem argumentos exigido pelo JPA. */
-    protected SolicitacaoCartao() {}
+    /** Construtor exigido pelo JPA. */
+    protected SolicitacaoCartao() {
+    }
 
-    /** Construtor do cadastro com propriedades e estado inicial preenchidos. */
+    /** Cria uma solicitação com estado inicial PENDENTE. */
     public SolicitacaoCartao(Usuario usuario, TipoCartao tipoCartao) {
         this.usuario = usuario;
         this.tipoCartao = tipoCartao;
@@ -42,27 +45,66 @@ public class SolicitacaoCartao {
         this.status = StatusSolicitacao.PENDENTE;
     }
 
-    /** Permitir somente PENDENTE para CANCELADA; outros estados geram conflito. */
+    /** Permite cancelar somente solicitações pendentes. */
     public void cancelar() {
-        // TODO: implementar o comportamento descrito no desafio.
-        throw new EtapaNaoImplementadaException("SolicitacaoCartao.cancelar");
+
+        if (status != StatusSolicitacao.PENDENTE) {
+            throw new RegraNegocioException(
+                    "Somente solicitações pendentes podem ser canceladas."
+            );
+        }
+
+        this.status = StatusSolicitacao.CANCELADA;
     }
 
-    /** Permitir somente PENDENTE para EMITIDA; executar na mesma transação da criação do cartão. */
+    /**
+     * Emissão será implementada na próxima etapa.
+     */
     public void marcarEmitida() {
-        // TODO: implementar o comportamento descrito no desafio.
-        throw new EtapaNaoImplementadaException("SolicitacaoCartao.marcarEmitida");
+        throw new EtapaNaoImplementadaException(
+                "SolicitacaoCartao.marcarEmitida"
+        );
     }
 
-    // Getters e setters prontos; não usar setters de status para contornar as regras.
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Usuario getUsuario() { return usuario; }
-    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
-    public TipoCartao getTipoCartao() { return tipoCartao; }
-    public void setTipoCartao(TipoCartao tipoCartao) { this.tipoCartao = tipoCartao; }
-    public Instant getSolicitadaEm() { return solicitadaEm; }
-    public void setSolicitadaEm(Instant solicitadaEm) { this.solicitadaEm = solicitadaEm; }
-    public StatusSolicitacao getStatus() { return status; }
-    public void setStatus(StatusSolicitacao status) { this.status = status; }
+    // Getters e setters originais
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
+    }
+
+    public TipoCartao getTipoCartao() {
+        return tipoCartao;
+    }
+
+    public void setTipoCartao(TipoCartao tipoCartao) {
+        this.tipoCartao = tipoCartao;
+    }
+
+    public Instant getSolicitadaEm() {
+        return solicitadaEm;
+    }
+
+    public void setSolicitadaEm(Instant solicitadaEm) {
+        this.solicitadaEm = solicitadaEm;
+    }
+
+    public StatusSolicitacao getStatus() {
+        return status;
+    }
+
+    public void setStatus(StatusSolicitacao status) {
+        this.status = status;
+    }
 }
