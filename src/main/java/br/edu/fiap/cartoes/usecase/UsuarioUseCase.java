@@ -1,21 +1,16 @@
 package br.edu.fiap.cartoes.usecase;
+
+import br.edu.fiap.cartoes.dto.UsuarioRequest;
+import br.edu.fiap.cartoes.dto.UsuarioResponse;
 import br.edu.fiap.cartoes.entity.Usuario;
 import br.edu.fiap.cartoes.exception.EmailJaCadastradoExcpetion;
 import br.edu.fiap.cartoes.repository.UsuarioRepository;
 import br.edu.fiap.cartoes.security.SenhaBCrypt;
 import jakarta.enterprise.context.ApplicationScoped;
-import java.util.List;
-import br.edu.fiap.cartoes.dto.*;
-import br.edu.fiap.cartoes.entity.StatusSolicitacao;
-import br.edu.fiap.cartoes.exception.EtapaNaoImplementadaException;
 import jakarta.inject.Inject;
-import jakarta.persistence.Inheritance;
 
-/**
- * Camada de aplicação a implementar: coordena uma operação, suas regras e transação.
- * O controller já chama estas assinaturas. Na migração para Clean, substituam
- * a dependência de DTO HTTP por entradas/saídas da aplicação e portas de saída.
- */
+import java.util.Locale;
+
 @ApplicationScoped
 public class UsuarioUseCase {
 
@@ -23,21 +18,39 @@ public class UsuarioUseCase {
     private final SenhaBCrypt senhas;
 
     @Inject
-    public UsuarioUseCase(UsuarioRepository usuario, SenhaBCrypt senhas) {
+    public UsuarioUseCase(
+            UsuarioRepository usuario,
+            SenhaBCrypt senhas
+    ) {
         this.usuario = usuario;
         this.senhas = senhas;
     }
 
-    /** Normalizar e-mail, rejeitar duplicado, gerar hash BCrypt, persistir e mapear sem senha. */
+    /**
+     * Normaliza o e-mail, verifica duplicidade,
+     * gera o hash BCrypt, persiste o usuario
+     * e retorna a resposta sem a senha.
+     */
     public UsuarioResponse cadastrar(UsuarioRequest request) {
-        if(usuario.existePorEmail(request.email())){
+
+        String emailNormalizado = request.email()
+                .trim()
+                .toLowerCase(Locale.ROOT);
+
+        if (usuario.buscarPorEmail(emailNormalizado).isPresent()) {
             throw new EmailJaCadastradoExcpetion();
         }
 
         String hash = senhas.criarHash(request.senha());
 
-        Usuario novoUsuario = Usuario.novo(request.nome(), request.email(), hash);
+        Usuario novoUsuario = Usuario.novo(
+                request.nome(),
+                emailNormalizado,
+                hash
+        );
 
-        return UsuarioResponse.de(usuario.salvar(novoUsuario));
+        Usuario usuarioSalvo = usuario.salvar(novoUsuario);
+
+        return UsuarioResponse.de(usuarioSalvo);
     }
 }
