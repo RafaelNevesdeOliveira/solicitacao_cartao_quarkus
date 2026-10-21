@@ -1,5 +1,19 @@
 package br.edu.fiap.cartoes.controller;
-/** Estrutura de teste do grupo; não contém teste resolvido nem @Test de exemplo. */
+
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
+
+import static io.restassured.RestAssured.given;
+
+@QuarkusTest
 class SegurancaIntegracaoTest {
-    // TODO: declarar os cenários e implementar as verificações descritas no README.
+
+    @Test
+    void deveRetornar401AoListarCartoesSemToken() {
+        given()
+            .when()
+            .get("/api/cartoes")
+            .then()
+            .statusCode(401);
+    }
 }
