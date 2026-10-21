@@ -3,6 +3,10 @@ package br.edu.fiap.cartoes.entity;
 
 import br.edu.fiap.cartoes.exception.RegraNegocioException;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import java.time.Instant;
 
 /**
@@ -38,6 +42,10 @@ public class Usuario {
         this.email = email;
         this.senhaHash = senhaHash;
         this.criadoEm = Instant.now();
+    }
+
+    public static Usuario novo(String nome, String email, String hash) {
+        return new Usuario(nome,email,hash);
     }
 
     public void alterarNome(String nome) {
