@@ -1,8 +1,6 @@
 package br.edu.fiap.cartoes.entity;
 
 import jakarta.persistence.*;
-import java.time.Instant;
-import br.edu.fiap.cartoes.exception.EtapaNaoImplementadaException;
 
 /**
  * Camada entity: representa o estado persistido de TipoCartao e seus comportamentos simples.
@@ -16,6 +14,7 @@ public class TipoCartao {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(nullable = false, unique = true, length = 60)
     private String nome;
 
@@ -35,10 +34,16 @@ public class TipoCartao {
         this.disponivel = disponivel;
     }
 
+    public TipoCartao(Long id, String nome, String descricao, boolean disponivel) {
+        this.id = id;
+        this.nome = nome;
+        this.descricao = descricao;
+        this.disponivel = disponivel;
+    }
+
     /** Alterar a oferta do tipo sem apagar pedidos anteriores. */
     public void alterarDisponibilidade(boolean disponivel) {
-        // TODO: implementar o comportamento descrito no desafio.
-        throw new EtapaNaoImplementadaException("TipoCartao.alterarDisponibilidade");
+        this.setDisponivel(disponivel);
     }
 
     // Getters e setters prontos; não usar setters de status para contornar as regras.
@@ -49,5 +54,5 @@ public class TipoCartao {
     public String getDescricao() { return descricao; }
     public void setDescricao(String descricao) { this.descricao = descricao; }
     public boolean isDisponivel() { return disponivel; }
-    public void setDisponivel(boolean disponivel) { this.disponivel = disponivel; }
+    private void setDisponivel(boolean disponivel) { this.disponivel = disponivel; }
 }

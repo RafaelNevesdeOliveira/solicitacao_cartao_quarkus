@@ -2,7 +2,7 @@ package br.edu.fiap.cartoes.entity;
 
 import jakarta.persistence.*;
 import java.time.Instant;
-import br.edu.fiap.cartoes.exception.EtapaNaoImplementadaException;
+import br.edu.fiap.cartoes.exception.RegraNegocioException;
 
 /**
  * Camada entity: representa o estado persistido de SolicitacaoCartao e seus comportamentos simples.
@@ -44,14 +44,18 @@ public class SolicitacaoCartao {
 
     /** Permitir somente PENDENTE para CANCELADA; outros estados geram conflito. */
     public void cancelar() {
-        // TODO: implementar o comportamento descrito no desafio.
-        throw new EtapaNaoImplementadaException("SolicitacaoCartao.cancelar");
+        if (status != StatusSolicitacao.PENDENTE) {
+            throw new RegraNegocioException("Somente uma solicitacao pendente pode ser cancelada");
+        }
+        status = StatusSolicitacao.CANCELADA;
     }
 
     /** Permitir somente PENDENTE para EMITIDA; executar na mesma transação da criação do cartão. */
     public void marcarEmitida() {
-        // TODO: implementar o comportamento descrito no desafio.
-        throw new EtapaNaoImplementadaException("SolicitacaoCartao.marcarEmitida");
+        if (status != StatusSolicitacao.PENDENTE) {
+            throw new RegraNegocioException("Somente uma solicitacao pendente pode ser emitida");
+        }
+        status = StatusSolicitacao.EMITIDA;
     }
 
     // Getters e setters prontos; não usar setters de status para contornar as regras.
