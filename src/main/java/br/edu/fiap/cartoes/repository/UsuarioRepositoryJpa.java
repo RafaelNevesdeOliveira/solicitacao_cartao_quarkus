@@ -3,6 +3,7 @@ import br.edu.fiap.cartoes.entity.Usuario;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 
 import java.util.Optional;
 
@@ -37,4 +38,10 @@ public class UsuarioRepositoryJpa implements UsuarioRepository {
     public Optional<Usuario> buscarPorId(Long id) {
         return Optional.ofNullable(em.find(Usuario.class, id));
     }
+
+    @Override
+    public Optional<Usuario> buscarPorIdComBloqueio(Long id) {
+        return Optional.ofNullable(em.find(Usuario.class, id, LockModeType.PESSIMISTIC_WRITE));
+    }
+
 }
