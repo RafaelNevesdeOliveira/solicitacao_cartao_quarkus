@@ -23,8 +23,13 @@ import java.util.Optional;
 @ApplicationScoped
 public class UsuarioRepositoryJpa implements UsuarioRepository {
 
+
+    private final EntityManager entityManager;
+
     @Inject
-    EntityManager entityManager;
+    public UsuarioRepositoryJpa(EntityManager entityManager) {
+        this.entityManager = entityManager;
+    }
 
     /**
      * Salva um novo usuario ou atualiza um existente.
@@ -33,14 +38,28 @@ public class UsuarioRepositoryJpa implements UsuarioRepository {
      * pelo caso de uso chamador.
      */
     @Override
+    @Transactional
     public Usuario salvar(Usuario usuario) {
 
-        if (usuario.getId() == null) {
+        try {
             entityManager.persist(usuario);
-            return usuario;
-        }
+            entityManager.flush();
 
-        return entityManager.merge(usuario);
+            return usuario;
+
+        } catch (RuntimeException erro) {
+
+            if (violouChaveUnica(erro)) {
+                throw new EmailJaCadastradoException(
+                        usuario.getEmail()
+                );
+            }
+
+            throw new IllegalStateException(
+                    "Falha ao cadastrar usuario",
+                    erro
+            );
+        }
     }
 
     /**
@@ -73,35 +92,6 @@ public class UsuarioRepositoryJpa implements UsuarioRepository {
         );
     }
 
-    /**
-     * Metodo adicional de cadastro implementado
-     * durante a contribuicao de autenticacao.
-     *
-     * Nao faz parte do contrato UsuarioRepository.
-     */
-    @Transactional
-    public Usuario cadastrar(Usuario usuario) {
-
-        try {
-            entityManager.persist(usuario);
-            entityManager.flush();
-
-            return usuario;
-
-        } catch (RuntimeException erro) {
-
-            if (violouChaveUnica(erro)) {
-                throw new EmailJaCadastradoException(
-                        usuario.getEmail()
-                );
-            }
-
-            throw new IllegalStateException(
-                    "Falha ao cadastrar usuario",
-                    erro
-            );
-        }
-    }
 
     /**
      * Verifica se a causa de uma falha
