@@ -1,47 +1,171 @@
+
+### DESAFIO SOLICITACAO DE CARTOES
+### FIAP / CAIXA VERSO
+###
+### Executar com a API iniciada na porta 8082.
+### O token JWT deve ser obtido na requisicao 2.
+### Nunca publicar tokens reais no Git.
+
 @baseUrl = http://localhost:8082
-@token = COLE_O_ACCESS_TOKEN_APOS_IMPLEMENTAR_LOGIN
+@token = COLE_AQUI_O_ACCESS_TOKEN_DO_LOGIN
 @tipoId = 1
 @solicitacaoId = 1
 
-### 1 Público JPA — usar um e-mail que não está na carga
+### ==================================================
+### 1. CADASTRAR USUARIO
+### Publica | JPA | Sucesso esperado: 201
+### Utilize um e-mail ainda nao cadastrado.
+### ==================================================
+
 POST {{baseUrl}}/api/usuarios
 Content-Type: application/json
 
-{"nome":"Aluno Cartoes","email":"aluno@example.com","senha":"Senha@123"}
+{
+  "nome": "Aluno Cartoes",
+  "email": "aluno@example.com",
+  "senha": "Senha@123"
+}
 
-### 2 Público JPA — implementar antes de chamar as rotas protegidas
+### ==================================================
+### 2. LOGIN
+### Publica | JWT | Sucesso esperado: 200
+###
+### Copie o accessToken da resposta e substitua
+### o valor da variavel @token acima.
+### Senha incorreta: 401.
+### ==================================================
+
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
-{"email":"aluno@example.com","senha":"Senha@123"}
+{
+  "email": "aluno@example.com",
+  "senha": "Senha@123"
+}
 
-### 3 Protegido — única consulta JDBC
+### ==================================================
+### 3. LISTAR TIPOS DE CARTAO DISPONIVEIS
+### Protegida | JDBC | Sucesso esperado: 200
+###
+### Deve retornar somente tipos disponiveis,
+### ordenados pelo nome.
+### Sem token valido: 401.
+### ==================================================
+
 GET {{baseUrl}}/api/tipos-cartao
 Authorization: Bearer {{token}}
 
-### 4 Protegido — titular vem do token, não do corpo
+### ==================================================
+### 4. CRIAR SOLICITACAO
+### Protegida | JPA | Sucesso esperado: 201
+###
+### O titular e identificado pelo JWT.
+### Nao informar usuarioId no corpo.
+###
+### Tipo inexistente: 404.
+### Tipo indisponivel: 409.
+### Solicitacao PENDENTE duplicada: 409.
+###
+### Anote o ID retornado e atualize
+### @solicitacaoId antes dos proximos testes.
+### ==================================================
+
 POST {{baseUrl}}/api/solicitacoes
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{"tipoCartaoId":{{tipoId}}}
+{
+  "tipoCartaoId": {{tipoId}}
+}
 
-### 5 Protegido JPA com JPQL personalizada
+### ==================================================
+### 5. LISTAR SOLICITACOES DO TITULAR
+### Protegida | JPA/JPQL | Sucesso esperado: 200
+###
+### O filtro status e opcional.
+### Status invalido: 400.
+### ==================================================
+
 GET {{baseUrl}}/api/solicitacoes?status=PENDENTE
 Authorization: Bearer {{token}}
 
-### 6 Protegido JPA — apenas pedido próprio
+### ==================================================
+### 6. CONSULTAR SOLICITACAO POR ID
+### Protegida | JPA | Sucesso esperado: 200
+###
+### Pedido inexistente ou de outro usuario: 404.
+### ==================================================
+
 GET {{baseUrl}}/api/solicitacoes/{{solicitacaoId}}
 Authorization: Bearer {{token}}
 
-### 7 Protegido JPA — para testar cancelar, não emitir este mesmo pedido
+### ==================================================
+### 7. CANCELAR SOLICITACAO
+### Protegida | JPA | Sucesso esperado: 200
+###
+### Somente solicitacoes PENDENTES.
+### Cancelamento repetido: 409.
+### Solicitacao EMITIDA: 409.
+###
+### IMPORTANTE:
+### Nao utilize o mesmo pedido para testar
+### cancelamento e emissao.
+### ==================================================
+
 PATCH {{baseUrl}}/api/solicitacoes/{{solicitacaoId}}/cancelar
 Authorization: Bearer {{token}}
 
-### 8 Protegido JPA — criar outro pedido PENDENTE e ajustar solicitacaoId antes
+### ==================================================
+### 8. EMITIR CARTAO
+### Protegida | JPA | Sucesso esperado: 201
+###
+### Crie outra solicitacao PENDENTE e atualize
+### @solicitacaoId antes de executar.
+###
+### A emissao deve:
+### - Criar um cartao ATIVO.
+### - Alterar a solicitacao para EMITIDA.
+### - Executar ambas as gravacoes na mesma transacao.
+###
+### Emissao repetida: 409.
+### Pedido CANCELADO: 409.
+### Pedido de outro titular: 404.
+### ==================================================
+
 POST {{baseUrl}}/api/solicitacoes/{{solicitacaoId}}/emitir
 Authorization: Bearer {{token}}
 
-### 9 Protegido JPA com JOIN entre cartão, solicitação e tipo
+### ==================================================
+### 9. LISTAR CARTOES DO TITULAR
+### Protegida | JPA/JPQL | Sucesso esperado: 200
+###
+### Deve retornar somente cartoes do usuario
+### autenticado, incluindo o nome do tipo.
+### ==================================================
+
 GET {{baseUrl}}/api/cartoes
 Authorization: Bearer {{token}}
+
+### ==================================================
+### TESTES COMPLEMENTARES
+###
+### 1. Repetir a requisicao 4 enquanto existir
+###    solicitacao PENDENTE para o mesmo tipo.
+###    Resultado esperado: 409.
+###
+### 2. Repetir a requisicao 7 apos cancelar.
+###    Resultado esperado: 409.
+###
+### 3. Repetir a requisicao 8 apos emitir.
+###    Resultado esperado: 409.
+###
+### 4. Consultar pedido de outro usuario.
+###    Resultado esperado: 404.
+###
+### 5. Remover o Authorization de uma rota
+###    protegida. Resultado esperado: 401.
+###
+### 6. Concorrencia e rollback exigem testes
+###    especificos. Este roteiro sequencial
+###    nao comprova esses dois cenarios.
+### ==================================================
