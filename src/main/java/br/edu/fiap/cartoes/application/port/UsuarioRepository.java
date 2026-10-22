@@ -10,7 +10,7 @@ import java.util.Optional;
  * Define as operacoes necessarias para acessar
  * e armazenar usuarios no banco de dados.
  *
- * A implementacao sera realizada por
+ * A implementacao e realizada por
  * UsuarioRepositoryJpa.
  */
 public interface UsuarioRepository {
@@ -40,4 +40,17 @@ public interface UsuarioRepository {
      *         caso seja encontrado
      */
     Optional<Usuario> buscarPorId(Long id);
+
+    /**
+     * Busca um usuario aplicando bloqueio pessimista
+     * de escrita no registro correspondente.
+     *
+     * Deve ser utilizado dentro de uma transacao ativa
+     * para coordenar operacoes concorrentes.
+     *
+     * @param id identificador do usuario
+     * @return Optional contendo o usuario bloqueado,
+     *         caso seja encontrado
+     */
+    Optional<Usuario> buscarPorIdComBloqueio(Long id);
 }

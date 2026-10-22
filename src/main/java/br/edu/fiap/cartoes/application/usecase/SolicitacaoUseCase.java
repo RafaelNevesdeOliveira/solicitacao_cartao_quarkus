@@ -29,13 +29,13 @@ import java.util.List;
  * relacionadas as solicitacoes de cartao.
  *
  * Regras de negocio:
- * - Criacao de solicitacoes.
+ * - Criacao de solicitacoes sem duplicidade pendente.
  * - Consulta por usuario.
  * - Cancelamento de solicitacoes pendentes.
  * - Emissao de cartoes.
  *
- * As operacoes de cancelamento e emissao
- * utilizam bloqueio pessimista.
+ * Utiliza bloqueio pessimista para coordenar
+ * operacoes concorrentes.
  */
 @ApplicationScoped
 public class SolicitacaoUseCase {
@@ -60,13 +60,21 @@ public class SolicitacaoUseCase {
 
     /**
      * Cria uma nova solicitacao de cartao.
+     *
+     * Bloqueia o registro do usuario antes
+     * de verificar a existencia de solicitacoes
+     * pendentes para o mesmo tipo de cartao.
+     *
+     * O bloqueio permanece ativo ate o termino
+     * da transacao.
      */
     @Transactional
     public SolicitacaoResponse criar(
             Long usuarioId,
             SolicitacaoRequest request) {
 
-        Usuario usuario = usuarioRepository.buscarPorId(usuarioId)
+        Usuario usuario = usuarioRepository
+                .buscarPorIdComBloqueio(usuarioId)
                 .orElseThrow(() ->
                         new RecursoNaoEncontradoException(
                                 "Usuario nao encontrado"

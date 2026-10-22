@@ -3,9 +3,11 @@ package br.edu.fiap.cartoes.infrastructure.persistence;
 import br.edu.fiap.cartoes.application.port.UsuarioRepository;
 import br.edu.fiap.cartoes.domain.model.Usuario;
 import br.edu.fiap.cartoes.domain.exception.EmailJaCadastradoException;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
 
 import java.sql.SQLException;
@@ -22,7 +24,6 @@ import java.util.Optional;
  */
 @ApplicationScoped
 public class UsuarioRepositoryJpa implements UsuarioRepository {
-
 
     private final EntityManager entityManager;
 
@@ -81,8 +82,6 @@ public class UsuarioRepositoryJpa implements UsuarioRepository {
 
     /**
      * Busca um usuario pelo identificador.
-     *
-     * Metodo exigido pelo contrato UsuarioRepository.
      */
     @Override
     public Optional<Usuario> buscarPorId(Long id) {
@@ -92,6 +91,25 @@ public class UsuarioRepositoryJpa implements UsuarioRepository {
         );
     }
 
+    /**
+     * Busca um usuario aplicando bloqueio pessimista
+     * de escrita no registro.
+     *
+     * A transacao deve permanecer ativa durante
+     * a verificacao de duplicidade e a criacao
+     * da solicitacao.
+     */
+    @Override
+    public Optional<Usuario> buscarPorIdComBloqueio(Long id) {
+
+        return Optional.ofNullable(
+                entityManager.find(
+                        Usuario.class,
+                        id,
+                        LockModeType.PESSIMISTIC_WRITE
+                )
+        );
+    }
 
     /**
      * Verifica se a causa de uma falha
