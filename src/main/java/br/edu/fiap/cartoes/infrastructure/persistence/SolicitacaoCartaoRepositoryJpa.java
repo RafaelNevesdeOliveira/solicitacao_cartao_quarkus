@@ -8,6 +8,7 @@ import br.edu.fiap.cartoes.domain.model.StatusSolicitacao;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +22,9 @@ import java.util.Optional;
  *
  * Utiliza EntityManager e consultas JPQL
  * com parametros.
+ *
+ * Oferece busca com bloqueio pessimista
+ * para operacoes de cancelamento e emissao.
  *
  * As transacoes de gravacao sao controladas
  * pelos casos de uso.
@@ -58,6 +62,28 @@ public class SolicitacaoCartaoRepositoryJpa
 
         return Optional.ofNullable(
                 entityManager.find(SolicitacaoCartao.class, id)
+        );
+    }
+
+    /**
+     * Busca uma solicitacao com bloqueio pessimista
+     * de escrita.
+     *
+     * Deve ser chamada dentro de uma transacao ativa.
+     * O bloqueio protege a solicitacao contra
+     * atualizacoes concorrentes.
+     *
+     * Retorna Optional.empty() caso nao exista.
+     */
+    @Override
+    public Optional<SolicitacaoCartao> buscarPorIdComBloqueio(Long id) {
+
+        return Optional.ofNullable(
+                entityManager.find(
+                        SolicitacaoCartao.class,
+                        id,
+                        LockModeType.PESSIMISTIC_WRITE
+                )
         );
     }
 

@@ -1,3 +1,4 @@
+
 package br.edu.fiap.cartoes.application.port;
 
 import br.edu.fiap.cartoes.domain.model.SolicitacaoCartao;
@@ -12,7 +13,7 @@ import java.util.Optional;
  * Define as operacoes utilizadas pelos casos de uso
  * para salvar e consultar solicitacoes.
  *
- * A implementacao sera realizada pela classe
+ * A implementacao e realizada pela classe
  * SolicitacaoCartaoRepositoryJpa.
  *
  * Nao depende de EntityManager,
@@ -56,4 +57,15 @@ public interface SolicitacaoCartaoRepository {
             Long usuarioId,
             StatusSolicitacao status
     );
+
+    /**
+     * Busca uma solicitacao com bloqueio pessimista
+     * de escrita para evitar alteracoes concorrentes.
+     *
+     * Deve ser utilizado dentro de uma transacao.
+     *
+     * @param id identificador da solicitacao
+     * @return solicitacao encontrada ou Optional vazio
+     */
+    Optional<SolicitacaoCartao> buscarPorIdComBloqueio(Long id);
 }

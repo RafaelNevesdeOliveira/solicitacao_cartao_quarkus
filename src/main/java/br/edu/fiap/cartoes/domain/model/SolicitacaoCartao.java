@@ -1,14 +1,15 @@
-
 package br.edu.fiap.cartoes.domain.model;
 
-import br.edu.fiap.cartoes.domain.exception.EtapaNaoImplementadaException;
 import br.edu.fiap.cartoes.domain.exception.RegraNegocioException;
+
 import jakarta.persistence.*;
 import java.time.Instant;
 
 /**
- * Representa uma solicitação de cartão bancário.
- * Contém os dados e as regras de mudança de estado.
+ * Representa uma solicitacao de cartao bancario.
+ *
+ * Contem os dados persistidos e as regras
+ * de mudanca de estado da solicitacao.
  */
 @Entity
 @Table(name = "solicitacoes_cartao")
@@ -33,11 +34,15 @@ public class SolicitacaoCartao {
     @Column(nullable = false, length = 20)
     private StatusSolicitacao status;
 
-    /** Construtor exigido pelo JPA. */
+    /**
+     * Construtor exigido pelo JPA.
+     */
     protected SolicitacaoCartao() {
     }
 
-    /** Cria uma solicitação com estado inicial PENDENTE. */
+    /**
+     * Cria uma solicitacao com estado inicial PENDENTE.
+     */
     public SolicitacaoCartao(Usuario usuario, TipoCartao tipoCartao) {
         this.usuario = usuario;
         this.tipoCartao = tipoCartao;
@@ -45,12 +50,14 @@ public class SolicitacaoCartao {
         this.status = StatusSolicitacao.PENDENTE;
     }
 
-    /** Permite cancelar somente solicitações pendentes. */
+    /**
+     * Permite cancelar somente solicitacoes pendentes.
+     */
     public void cancelar() {
 
         if (status != StatusSolicitacao.PENDENTE) {
             throw new RegraNegocioException(
-                    "Somente solicitações pendentes podem ser canceladas."
+                    "Somente solicitacoes pendentes podem ser canceladas."
             );
         }
 
@@ -58,12 +65,20 @@ public class SolicitacaoCartao {
     }
 
     /**
-     * Emissão será implementada na próxima etapa.
+     * Marca a solicitacao como emitida.
+     *
+     * Somente solicitacoes pendentes podem ser emitidas.
+     * Solicitacoes canceladas ou ja emitidas sao rejeitadas.
      */
     public void marcarEmitida() {
-        throw new EtapaNaoImplementadaException(
-                "SolicitacaoCartao.marcarEmitida"
-        );
+
+        if (status != StatusSolicitacao.PENDENTE) {
+            throw new RegraNegocioException(
+                    "Somente solicitacoes pendentes podem ser emitidas."
+            );
+        }
+
+        this.status = StatusSolicitacao.EMITIDA;
     }
 
     // Getters e setters originais
