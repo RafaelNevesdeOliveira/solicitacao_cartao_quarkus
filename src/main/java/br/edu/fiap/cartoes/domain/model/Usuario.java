@@ -41,68 +41,41 @@ public class Usuario {
         this.criadoEm = Instant.now();
     }
 
-    public static Usuario novo(String nome, String email, String hash) {
-        return new Usuario(nome,email,hash);
-    }
-
-    public void alterarNome(String nome) {
-        if (nome == null || nome.isBlank()
-                || nome.trim().length() > 100) {
-            throw new RegraNegocioException(
-                    "O nome deve conter entre 1 e 100 caracteres."
-            );
-        }
-
-        this.nome = nome.trim();
-    }
-
-    public void atualizarSenhaHash(String senhaHash) {
-        if (senhaHash == null || senhaHash.isBlank()) {
-            throw new RegraNegocioException(
-                    "O hash da senha não pode ser vazio."
-            );
-        }
-
+    public Usuario(Long id, String nome, String email, String senhaHash, Instant criadoEm) {
+        this.id = id;
+        this.nome = nome;
+        this.email = email;
         this.senhaHash = senhaHash;
+        this.criadoEm = criadoEm;
+    }
+
+    public static Usuario de(Usuario usuario) {
+        Usuario entity = new Usuario();
+        entity.nome = usuario.nome;
+        entity.email = usuario.email;
+        entity.senhaHash = usuario.senhaHash;
+        entity.criadoEm = usuario.criadoEm;
+        return entity;
     }
 
     public Long getId() {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public String getNome() {
         return nome;
-    }
-
-    public void setNome(String nome) {
-        this.nome = nome;
     }
 
     public String getEmail() {
         return email;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
     public String getSenhaHash() {
         return senhaHash;
-    }
-
-    public void setSenhaHash(String senhaHash) {
-        this.senhaHash = senhaHash;
     }
 
     public Instant getCriadoEm() {
         return criadoEm;
     }
 
-    public void setCriadoEm(Instant criadoEm) {
-        this.criadoEm = criadoEm;
-    }
 }

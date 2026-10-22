@@ -1,9 +1,9 @@
 package br.edu.fiap.cartoes.application.usecase;
 
+import br.edu.fiap.cartoes.domain.exception.EmailJaCadastradoException;
 import br.edu.fiap.cartoes.presentation.dto.UsuarioRequest;
 import br.edu.fiap.cartoes.presentation.dto.UsuarioResponse;
 import br.edu.fiap.cartoes.domain.model.Usuario;
-import br.edu.fiap.cartoes.domain.exception.EmailJaCadastradoExcpetion;
 import br.edu.fiap.cartoes.application.port.UsuarioRepository;
 import br.edu.fiap.cartoes.infrastructure.security.SenhaBCrypt;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -38,12 +38,12 @@ public class UsuarioUseCase {
                 .toLowerCase(Locale.ROOT);
 
         if (usuario.buscarPorEmail(emailNormalizado).isPresent()) {
-            throw new EmailJaCadastradoExcpetion();
+            throw new EmailJaCadastradoException(emailNormalizado);
         }
 
         String hash = senhas.criarHash(request.senha());
 
-        Usuario novoUsuario = Usuario.novo(
+        Usuario novoUsuario = new Usuario(
                 request.nome(),
                 emailNormalizado,
                 hash
