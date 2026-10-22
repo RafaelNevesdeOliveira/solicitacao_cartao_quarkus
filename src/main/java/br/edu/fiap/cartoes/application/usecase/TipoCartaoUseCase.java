@@ -1,19 +1,27 @@
+
 package br.edu.fiap.cartoes.application.usecase;
+
+import br.edu.fiap.cartoes.application.port.ConsultaTiposDisponiveis;
 import br.edu.fiap.cartoes.presentation.dto.TipoCartaoResponse;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
 import java.util.List;
 
-import br.edu.fiap.cartoes.domain.exception.EtapaNaoImplementadaException;
-/**
- * Camada de aplicação a implementar: coordena uma operação, suas regras e transação.
- * O controller já chama estas assinaturas. Na migração para Clean, substituam
- * a dependência de DTO HTTP por entradas/saídas da aplicação e portas de saída.
- */
 @ApplicationScoped
 public class TipoCartaoUseCase {
-    /** Delegar à única consulta JDBC e mapear a resposta. */
+
+    private final ConsultaTiposDisponiveis consultaTipos;
+
+    @Inject
+    public TipoCartaoUseCase(ConsultaTiposDisponiveis consultaTipos) {
+        this.consultaTipos = consultaTipos;
+    }
+
     public List<TipoCartaoResponse> listarDisponiveis() {
-        // TODO: implementar sem colocar SQL ou regras no controller.
-        throw new EtapaNaoImplementadaException("TipoCartaoUseCase.listarDisponiveis");
+        return consultaTipos.listarDisponiveis()
+                .stream()
+                .map(tipo -> new TipoCartaoResponse(tipo.getId(), tipo.getNome(), tipo.getDescricao(), tipo.isDisponivel()))
+                .toList();
     }
 }
