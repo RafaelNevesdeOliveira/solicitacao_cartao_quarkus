@@ -1,14 +1,15 @@
 package br.edu.fiap.cartoes.usecase;
 
-import br.edu.fiap.cartoes.dto.SolicitacaoResponse;
-import br.edu.fiap.cartoes.entity.SolicitacaoCartao;
-import br.edu.fiap.cartoes.entity.StatusSolicitacao;
-import br.edu.fiap.cartoes.entity.TipoCartao;
-import br.edu.fiap.cartoes.entity.Usuario;
-import br.edu.fiap.cartoes.exception.RegraNegocioException;
-import br.edu.fiap.cartoes.repository.SolicitacaoCartaoRepository;
-import br.edu.fiap.cartoes.repository.TipoCartaoRepository;
-import br.edu.fiap.cartoes.repository.UsuarioRepository;
+import br.edu.fiap.cartoes.presentation.dto.SolicitacaoResponse;
+import br.edu.fiap.cartoes.domain.model.SolicitacaoCartao;
+import br.edu.fiap.cartoes.domain.model.StatusSolicitacao;
+import br.edu.fiap.cartoes.domain.model.TipoCartao;
+import br.edu.fiap.cartoes.domain.model.Usuario;
+import br.edu.fiap.cartoes.domain.exception.RegraNegocioException;
+import br.edu.fiap.cartoes.application.port.SolicitacaoCartaoRepository;
+import br.edu.fiap.cartoes.application.port.TipoCartaoRepository;
+import br.edu.fiap.cartoes.application.port.UsuarioRepository;
+import br.edu.fiap.cartoes.application.usecase.SolicitacaoUseCase;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -60,9 +61,9 @@ class SolicitacaoUseCaseTest {
     }
 
     private SolicitacaoCartao novaSolicitacao(StatusSolicitacao status) {
-        Usuario usuario = new Usuario("Cliente", "cliente@example.com", "hash");
-        usuario.setId(1L);
-        TipoCartao tipoCartao = new TipoCartao("ESSENCIAL", "Cartão essencial", true);
+        Usuario usuario = new Usuario(1L, "Cliente", "cliente@example.com", "hash", java.time.Instant.now());
+
+        TipoCartao tipoCartao = new TipoCartao("ESSENCIAL", "CartÃ£o essencial", true);
         tipoCartao.setId(2L);
 
         SolicitacaoCartao solicitacao = new SolicitacaoCartao(usuario, tipoCartao);
@@ -71,3 +72,5 @@ class SolicitacaoUseCaseTest {
         return solicitacao;
     }
 }
+
+
