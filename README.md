@@ -1,8 +1,10 @@
 # Desafio Solicitação de Cartões
 
-Projeto-base de exercício, inspirado na agência bancária Quarkus. JDK **25.0.2**, Quarkus **3.40.1**, Maven, JPA com EntityManager, JDBC, JWT HS256 e BCrypt.
+Implementação colaborativa do desafio da agência fictícia Aurora, inspirada na agência bancária Quarkus. JDK **25.0.2**, Quarkus **3.40.1**, Maven, JPA com EntityManager, JDBC, JWT HS256 e BCrypt.
 
-**Não é um gabarito.** A aplicação compila e inicia, prepara o banco e exibe o Swagger. As regras, consultas, geração de token e hash ainda são TODOs. Uma chamada válida chega ao use case e retorna **501 TODO** até o grupo implementar. Não remover a proteção para contornar o login incompleto.
+A API implementa cadastro, autenticação, consulta de tipos, criação e acompanhamento de solicitações, cancelamento, emissão e listagem de cartões. As nove rotas do enunciado foram preservadas. A aplicação usa H2 por padrão e oferece um perfil opcional PostgreSQL.
+
+**Estado de validação:** compilação e testes automatizados existentes concluídos com sucesso (`.\mvnw.cmd clean test` no Windows). Foram realizados testes manuais de autenticação, autorização e regras de negócio. Ainda faltam evidências automatizadas específicas de concorrência, rollback forçado e execução no PostgreSQL.
 
 O enunciado para os alunos está em `../documentos/Desafio_Solicitacao_de_Cartoes.docx`.
 
@@ -12,17 +14,17 @@ A agência fictícia Aurora quer permitir que seus clientes solicitem um cartão
 
 Não é um produto bancário real. Não há análise de crédito, aprovação administrativa, pagamento, número de cartão, CVV, bandeira ou integração externa. A emissão pelo próprio titular é uma simplificação pedagógica.
 
-## O que está pronto e o que implementar
+## Implementação realizada
 
-| Pronto | Trabalho do grupo |
+| Área | Implementação |
 | --- | --- |
-| 5 controllers, 9 rotas, segurança declarativa e contratos Swagger | Implementar os 5 use cases |
-| 9 DTOs, inclusive cadastro, login e token | Declarar métodos nas 5 interfaces de persistência |
-| 4 entidades anotadas, atributos, construtores, getters e setters | Implementar os 5 adaptadores de persistência |
-| Estado inicial nos construtores | Preencher comportamentos com TODO nas entidades |
-| Tratamento global e exceções comuns | Implementar JwtService e SenhaBCrypt |
-| POM, verificador JWT, H2, perfil PostgreSQL e SQL de startup | Migrar as camadas para Clean Architecture |
-| Estrutura de teste sem testes resolvidos | Verificar os cenários do desafio |
+| API REST | 5 controllers e 9 rotas, preservando os contratos HTTP do desafio |
+| Segurança | Cadastro com senha BCrypt, login JWT HS256 e sete rotas protegidas |
+| Persistência | JPA com EntityManager para usuários, solicitações e cartões; JDBC para listar tipos disponíveis |
+| Regras de negócio | Titularidade, validação de tipo, prevenção de pendência duplicada, cancelamento e emissão |
+| Concorrência | Bloqueio pessimista na criação por usuário e nas transições de cancelamento/emissão por solicitação |
+| Arquitetura | Separação entre domínio, casos de uso, portas, infraestrutura e apresentação, com concessão didática de anotações JPA no modelo |
+| Testes | Testes unitários existentes aprovados; cenários manuais de API executados |
 
 ## Rodar sem Docker
 
@@ -86,7 +88,7 @@ Carga em uma base vazia: **2 usuários, 3 tipos, 3 solicitações e 1 cartão**.
 - `ana@example.com`
 - `bruno@example.com`
 - Senha pública de ambos: `Cartoes@123` (hash BCrypt custo 12 na carga).
-- A senha só funcionará na rota depois de o grupo implementar login e BCrypt.
+- O login e a verificação BCrypt estão implementados.
 
 A carga usa e-mail/nome para relacionar os registros e não presume IDs. Use um novo usuário no roteiro do grupo para não disputar pedidos da demonstração.
 
@@ -106,7 +108,7 @@ Todas retornam JSON. Use `Authorization: Bearer <accessToken>` nas sete rotas pr
 | 8 | POST /api/solicitacoes/{id}/emitir | Protegida | JPA | 201 |
 | 9 | GET /api/cartoes | Protegida | JPA com JPQL própria | 200 |
 
-Sem token, token inválido ou expirado: **401**. Não há perfis administrador/cliente. Autenticação é comum; autorização por **titularidade** deve ser implementada no use case/repository.
+Sem token, token inválido ou expirado: **401**. Não há perfis administrador/cliente. Autenticação é comum; a autorização por **titularidade** é aplicada nos casos de uso e repositórios.
 
 Pedidos inexistentes **e** de outro titular retornam **404**. Não aceitar usuarioId no JSON: ele vem do claim assinado. Listas sem resultados retornam 200 com `[]`.
 
@@ -114,7 +116,7 @@ Pedidos inexistentes **e** de outro titular retornam **404**. Não aceitar usuar
 
 Quatro entidades, sem entidade adicional de endereço ou item.
 
-| Entidade | Propriedades, incluindo ID | Comportamentos TODO |
+| Entidade | Propriedades, incluindo ID | Comportamentos |
 | --- | --- | --- |
 | Usuario | id Long, nome String, email String, senhaHash String, criadoEm Instant | alterarNome; atualizarSenhaHash |
 | TipoCartao | id Long, nome String, descricao String, disponivel boolean | alterarDisponibilidade |
@@ -123,7 +125,7 @@ Quatro entidades, sem entidade adicional de endereço ou item.
 
 Usuario 1:N SolicitacaoCartao; TipoCartao 1:N SolicitacaoCartao; SolicitacaoCartao 1:0..1 Cartao. As FKs ficam nos lados de solicitação e cartão. A FK solicitacao_id do cartão é UNIQUE.
 
-Os construtores de cadastro já atribuem propriedades: usuário recebe hash, solicitação nasce PENDENTE e cartão nasce ATIVO. Eles não implementam as validações que faltam. O construtor protegido sem argumentos existe para o JPA.
+Os construtores de cadastro já atribuem propriedades: usuário recebe hash, solicitação nasce PENDENTE e cartão nasce ATIVO. As validações de negócio são aplicadas nos comportamentos e casos de uso. O construtor protegido sem argumentos existe para o JPA.
 
 Os setters foram entregues para acompanhar o padrão da turma, mas o use case **não pode** usá-los para contornar cancelar/marcarEmitida. Senha e hash nunca saem nos DTOs de resposta.
 
@@ -140,41 +142,19 @@ Os setters foram entregues para acompanhar o padrão da turma, mas o use case **
 9. Uma solicitação só pode gerar um cartão. Repetir emissão gera 409.
 10. Cartões: listar somente os próprios, trazendo nome do tipo por relacionamento, sem expor entidade inteira.
 
-Para concorrência, usem bloqueio de escrita da solicitação ao emitir e cancelar, dentro da transação. Para impedir dois cadastros pendentes simultâneos, uma opção didática é bloquear o usuário antes de conferir duplicidade e inserir. O SQL já impede dois cartões para a mesma solicitação; tratem a violação esperada sem vazar SQL. Um catch genérico não deve esconder falhas desconhecidas como 409.
+Para concorrência, a implementação usa bloqueio de escrita da solicitação ao emitir e cancelar, dentro da transação. Para impedir dois pedidos pendentes simultâneos, bloqueia o usuário antes de conferir duplicidade e inserir. O SQL já impede dois cartões para a mesma solicitação; tratem a violação esperada sem vazar SQL. Um catch genérico não deve esconder falhas desconhecidas como 409.
 
-## Ordem de implementação
+## Organização da implementação
 
-O pacote-base é `br.edu.fiap.cartoes`. Não alterem o projeto da agência bancária.
+O pacote-base é `br.edu.fiap.cartoes`. As responsabilidades foram distribuídas entre:
 
-1. **Entity**: completar cancelar e marcarEmitida em SolicitacaoCartao; testar transições. Preencher os comportamentos de Usuario, TipoCartao e Cartao.
-2. **Interfaces de repository**: declarar operações nas cinco interfaces que os use cases precisam. Não há geração automática por nomes como countBy: aqui é EntityManager e implementação manual.
-3. **UsuarioRepositoryJpa**: salvar, buscar por e-mail e por ID; parametrizar consultas.
-4. **SenhaBCrypt**: implementar criarHash e confere com BcryptUtil, custo configurado e limite em bytes.
-5. **UsuarioUseCase.cadastrar**: validar, normalizar, verificar unicidade, gerar hash, persistir em transação, mapear UsuarioResponse.
-6. **JwtService.emitir**: montar iss, sub=email, iat, exp e usuarioId; assinar HS256 com segredo configurado; preencher TokenResponse.
-7. **AutenticacaoUseCase.login**: buscar usuário, comparar hash e emitir token; não confundir hash com senha.
-8. **TipoCartaoRepositoryJdbc e TipoCartaoUseCase**: implementar listarDisponiveis com PreparedStatement e try-with-resources.
-9. **TipoCartaoRepositoryJpa e SolicitacaoCartaoRepositoryJpa**: buscar tipo por ID; salvar pedido, consultar por ID e titular, listar por titular/status e verificar pedido pendente.
-10. **SolicitacaoUseCase.criar, listar e buscar**: aplicar acesso e regras usando o repositório.
-11. **SolicitacaoUseCase.cancelar**: abrir transação, buscar/bloquear pedido próprio e usar o comportamento da entidade.
-12. **CartaoRepositoryJpa**: salvar, verificar vínculo único e listar por titular com o tipo.
-13. **SolicitacaoUseCase.emitir e CartaoUseCase.listar**: compor emissão atômica e consulta relacionada.
-14. Conferir Swagger, JSON e tabelas no banco ativo; executar os cenários de aceitação.
-15. Migrar para Clean Architecture mantendo exatamente os contratos HTTP e as regras.
+1. **Domínio:** entidades e transições de estado (`PENDENTE`, `CANCELADA`, `EMITIDA` e cartão `ATIVO`).
+2. **Aplicação:** casos de uso que coordenam validações, titularidade e transações.
+3. **Portas:** contratos de repositório e de consulta usados pelos casos de uso.
+4. **Infraestrutura:** adaptadores JPA/JDBC, BCrypt, JWT e inicialização do banco.
+5. **Apresentação:** controllers REST, DTOs e tratamento de erros HTTP.
 
-## Contratos que o grupo precisa desenhar
-
-Os nomes abaixo são uma orientação de assinatura, não implementações prontas.
-
-| Interface atual | Operações esperadas |
-| --- | --- |
-| UsuarioRepository | salvar, buscarPorEmail, buscarPorId; opção de busca com bloqueio para serializar novos pedidos |
-| ConsultaTiposDisponiveis | listarDisponiveis via JDBC |
-| TipoCartaoRepository | buscarPorId via JPA |
-| SolicitacaoCartaoRepository | salvar, buscarPorIdETitular, listarPorTitularEStatus, existePendente; busca com bloqueio para transições |
-| CartaoRepository | salvar, existePorSolicitacao, listarPorTitular |
-
-**Atenção ao tipo de cartão:** `ConsultaTiposDisponiveis` tem somente a listagem e é implementada por `TipoCartaoRepositoryJdbc`. `TipoCartaoRepository` é o contrato da busca por ID e é implementado por `TipoCartaoRepositoryJpa`. Assim, só a rota GET usa JDBC; a criação de solicitação continua inteiramente JPA, sem ambiguidade de injeção.
+A consulta de tipos disponíveis é feita via JDBC; a busca do tipo por ID usada na criação da solicitação permanece em JPA. A criação de solicitações bloqueia o registro do usuário; cancelamento e emissão bloqueiam a solicitação. Essas estratégias precisam ser verificadas também com testes concorrentes reais.
 
 ### O que observar nas queries
 
@@ -189,7 +169,7 @@ Os nomes abaixo são uma orientação de assinatura, não implementações pront
 
 Os controllers protegidos usam `@Authenticated`; cadastro e login usam `@PermitAll`. `UsuarioAtual` lê usuarioId de um token verificado. A configuração rejeita JWT com assinatura/issuer/expiração inválidos.
 
-O grupo implementa emissão e BCrypt, não um filtro JWT manual. Configurações de custo 12 e validade 900 segundos são escolhas do laboratório, não números obrigatórios para toda produção.
+A emissão de JWT e o BCrypt são implementados pelos serviços de segurança do projeto, sem filtro JWT manual. Configurações de custo 12 e validade 900 segundos são escolhas do laboratório, não números obrigatórios para toda produção.
 
 No Swagger, execute o login, copie só o accessToken e cole em **Authorize**. A UI monta o Bearer. Use HTTPS em ambiente real. A chave de desenvolvimento no properties e no jwt-secret.jwk é pública e não deve ser reutilizada fora da aula.
 
@@ -197,12 +177,12 @@ O JWK pronto guarda os mesmos bytes do segredo em Base64URL. Se alterar o segred
 
 ## Migração obrigatória para Clean Architecture
 
-A casca começa em camadas convencionais. O grupo implementa e depois refatora sem mudar as rotas:
+O projeto parte de camadas convencionais e foi organizado em responsabilidades de Clean Architecture sem mudar as rotas. A estrutura conceitual de referência é:
 
 ```text
 domain/model                  comportamentos e estados
 application/usecase           coordenação das operações
-application/port/out          contratos de persistência, hash e token
+application/port              contratos de persistência e consulta
 application/model             entradas e resultados sem tipos HTTP
 infrastructure/persistence    JDBC, JPA e mapeamentos
 infrastructure/security       BCrypt e JWT SmallRye
@@ -216,7 +196,7 @@ Não basta mover pastas: use cases dependem de interfaces internas, não de clas
 
 Para manter o esforço adequado, **não é obrigatório duplicar todas as entidades**: o grupo pode manter as anotações JPA no modelo como concessão didática, registrando essa decisão. Isso não é isolamento estrito de persistência. Quem escolher isolamento estrito cria modelo JPA e mapeadores próprios, sem criar novas entidades de negócio.
 
-Comprovar antes/depois pelo mesmo requests.http e um desenho das dependências. Não usar a migração para inserir SQL no use case ou regra no controller.
+A documentação e os testes devem permitir conferir os mesmos contratos antes e depois da refatoração. Não usar a migração para inserir SQL no use case ou regra no controller.
 
 ## Roteiro de aceitação
 
@@ -233,9 +213,9 @@ Use um usuário novo para evitar colisões com os dados da carga.
 9. Forçar falha na emissão durante desenvolvimento e demonstrar rollback; remover qualquer gancho artificial antes de entregar.
 10. Após a migração Clean, repetir o roteiro sem mudar JSONs e rotas.
 
-Estrutura de testes pronta, sem exercícios resolvidos: `src/test/java`. Como evidência adicional, sugerimos dois testes unitários (cancelamento permitido e emissão em estado inválido) e um de integração (401 sem token). O projeto não possui cobertura de regra de negócio enquanto esses testes não forem escritos.
+Os testes automatizados existentes em `src/test/java` foram executados com sucesso. Entre os cenários unitários verificados estão cancelamento permitido, rejeição de cancelamento após emissão, emissão de pedido pendente, rejeição de reemissão, rejeição de pedido cancelado, duplicidade pendente e titularidade. Testes específicos de concorrência simultânea, rollback forçado e PostgreSQL permanecem pendentes.
 
-## Definição de pronto
+## Critérios de entrega e pendências de validação
 
 - Nove rotas conforme contrato; uma rota JDBC e as demais JPA, sem implementar novos endpoints.
 - Comportamentos preenchidos; nenhuma chamada obrigatória permanece em 501.
@@ -245,8 +225,8 @@ Estrutura de testes pronta, sem exercícios resolvidos: `src/test/java`. Como ev
 - Consultas JPQL customizadas e parâmetros JDBC demonstrados.
 - Relações conferidas no banco; dois usuários usados no teste de isolamento.
 - Clean Architecture com portas e dependências explicadas; concessões registradas.
-- Swagger coerente e requests.http atualizado com IDs reais, sem commitar tokens.
-- README atualizado pelo grupo com as decisões de implementação.
+- Conferir Swagger e atualizar `requests.http` com exemplos reproduzíveis, sem commitar tokens reais.
+- README registra as decisões de implementação e as validações ainda pendentes.
 
 ## Referências oficiais
 
